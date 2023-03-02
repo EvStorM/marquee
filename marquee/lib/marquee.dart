@@ -16,7 +16,7 @@ class _IntegralCurve extends Curve {
   /// Delta for integrating.
   static double delta = 0.01;
 
-  _IntegralCurve._(this.original, this.integral, this._values);
+  const _IntegralCurve._(this.original, this.integral, this._values);
 
   /// The original curve that was integrated.
   final Curve original;
@@ -30,7 +30,7 @@ class _IntegralCurve extends Curve {
   /// The constructor that takes the [original] curve.
   factory _IntegralCurve(Curve original) {
     double integral = 0.0;
-    final values = Map<double, double>();
+    final values = <double, double>{};
 
     for (double t = 0.0; t <= 1.0; t += delta) {
       integral += original.transform(t) * delta;
@@ -39,16 +39,21 @@ class _IntegralCurve extends Curve {
     values[1.0] = integral;
 
     // Normalize.
-    for (final double t in values.keys) values[t] = values[t]! / integral;
+    for (final double t in values.keys) {
+      values[t] = values[t]! / integral;
+    }
 
     return _IntegralCurve._(original, integral, values);
   }
 
   /// Transforms a value to the normalized integrated value of the [original]
   /// curve.
+  @override
   double transform(double t) {
     if (t < 0) return 0.0;
-    for (final key in _values.keys) if (key > t) return _values[key]!;
+    for (final key in _values.keys) {
+      if (key > t) return _values[key]!;
+    }
     return 1.0;
   }
 }
@@ -93,7 +98,7 @@ class Marquee extends StatefulWidget {
   Marquee({
     super.key,
     required this.text,
-    this.style = TextStyle(),
+    this.style = const TextStyle(),
     this.textScaleFactor = 0,
     this.textDirection = TextDirection.ltr,
     this.scrollAxis = Axis.horizontal,
@@ -144,8 +149,8 @@ class Marquee extends StatefulWidget {
           "The decelerationDuration must be positive or zero as time travel "
           "isn't invented yet.",
         ),
-        this.accelerationCurve = _IntegralCurve(accelerationCurve),
-        this.decelerationCurve = _IntegralCurve(decelerationCurve);
+        accelerationCurve = _IntegralCurve(accelerationCurve),
+        decelerationCurve = _IntegralCurve(decelerationCurve);
 
   /// The text to be displayed.
   ///
@@ -535,8 +540,7 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
   bool get isDone => widget.numberOfRounds == null
       ? false
       : widget.numberOfRounds == _roundCounter;
-  bool get showFading =>
-      widget.showFadingOnlyWhenScrolling ? true : _isOnPause;
+  bool get showFading => widget.showFadingOnlyWhenScrolling ? true : _isOnPause;
 
   @override
   void initState() {
@@ -607,7 +611,7 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
       "negative. As time travel isn't invented yet, this shouldn't happen.",
     );
     assert(
-      _linearDuration >= Duration.zero,
+      _linearDuration! >= Duration.zero,
       "Acceleration and deceleration phase overlap. To fix this, try a "
       "combination of these approaches:\n"
       "* Make the text longer, so there's more room to animate within.\n"
@@ -674,10 +678,10 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
     Curve curve,
   ) async {
     if (_controller.hasClients) return;
-    if (duration > Duration.zero) {
-      await _controller.animateTo(target, duration: duration, curve: curve);
+    if (duration! > Duration.zero) {
+      await _controller.animateTo(target!, duration: duration, curve: curve);
     } else {
-      _controller.jumpTo(target);
+      _controller.jumpTo(target!);
     }
   }
 
@@ -685,7 +689,7 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
   double _getTextWidth(BuildContext context) {
     final span = TextSpan(text: widget.text, style: widget.style);
 
-    final constraints = BoxConstraints(maxWidth: double.infinity);
+    const constraints = BoxConstraints(maxWidth: double.infinity);
 
     final richTextWidget = Text.rich(span).build(context) as RichText;
     final renderObject = richTextWidget.createRenderObject(context);
@@ -727,7 +731,7 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
       controller: _controller,
       scrollDirection: widget.scrollAxis,
       reverse: widget.textDirection == TextDirection.rtl,
-      physics: NeverScrollableScrollPhysics(),
+      physics: const NeverScrollableScrollPhysics(),
       itemBuilder: (_, i) {
         final text = i.isEven
             ? Text(widget.text,
