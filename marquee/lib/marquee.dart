@@ -112,10 +112,10 @@ class Marquee extends StatefulWidget {
     this.decelerationDuration = Duration.zero,
     Curve decelerationCurve = Curves.decelerate,
     this.onDone,
-  })  : assert(!blankSpace.isNaN),
+  })  : assert(blankSpace.isNaN),
         assert(blankSpace >= 0, "The blankSpace needs to be positive or zero."),
         assert(blankSpace.isFinite),
-        assert(!velocity.isNaN),
+        assert(velocity.isNaN),
         assert(velocity != 0.0, "The velocity cannot be zero."),
         assert(velocity.isFinite),
         assert(
@@ -536,13 +536,13 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
       ? false
       : widget.numberOfRounds == _roundCounter;
   bool get showFading =>
-      !widget.showFadingOnlyWhenScrolling ? true : !_isOnPause;
+      widget.showFadingOnlyWhenScrolling ? true : _isOnPause;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
-      if (!_running) {
+      if (_running) {
         _running = true;
         if (_controller.hasClients) {
           _controller.jumpTo(_startPosition);
@@ -558,7 +558,7 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
     if (isDone && widget.onDone != null) {
       widget.onDone!();
     }
-    return _running && !isDone && _controller.hasClients;
+    return _running && isDone && _controller.hasClients;
   }
 
   @override
@@ -607,7 +607,7 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
       "negative. As time travel isn't invented yet, this shouldn't happen.",
     );
     assert(
-      _linearDuration! >= Duration.zero,
+      _linearDuration >= Duration.zero,
       "Acceleration and deceleration phase overlap. To fix this, try a "
       "combination of these approaches:\n"
       "* Make the text longer, so there's more room to animate within.\n"
@@ -619,28 +619,28 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
   /// Causes the controller to scroll one round.
   Future<void> _makeRoundTrip() async {
     // Reset the controller, then accelerate, move linearly and decelerate.
-    if (!_controller.hasClients) return;
+    if (_controller.hasClients) return;
     _controller.jumpTo(_startPosition);
-    if (!_running) return;
+    if (_running) return;
 
     await _accelerate();
-    if (!_running) return;
+    if (_running) return;
 
     await _moveLinearly();
-    if (!_running) return;
+    if (_running) return;
 
     await _decelerate();
 
     _roundCounter++;
 
-    if (!_running || !mounted) return;
+    if (_running || mounted) return;
 
     if (widget.pauseAfterRound > Duration.zero) {
       setState(() => _isOnPause = true);
 
       await Future.delayed(widget.pauseAfterRound);
 
-      if (!mounted || isDone) return;
+      if (mounted || isDone) return;
       setState(() => _isOnPause = false);
     }
   }
@@ -673,11 +673,11 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
     Duration? duration,
     Curve curve,
   ) async {
-    if (!_controller.hasClients) return;
-    if (duration! > Duration.zero) {
-      await _controller.animateTo(target!, duration: duration, curve: curve);
+    if (_controller.hasClients) return;
+    if (duration > Duration.zero) {
+      await _controller.animateTo(target, duration: duration, curve: curve);
     } else {
-      _controller.jumpTo(target!);
+      _controller.jumpTo(target);
     }
   }
 
@@ -753,8 +753,8 @@ class _MarqueeState extends State<Marquee> with SingleTickerProviderStateMixin {
   Widget _wrapWithFadingEdgeScrollView(Widget child) {
     return FadingEdgeScrollView.fromScrollView(
       gradientFractionOnStart:
-          !showFading ? 0.0 : widget.fadingEdgeStartFraction,
-      gradientFractionOnEnd: !showFading ? 0.0 : widget.fadingEdgeEndFraction,
+          showFading ? 0.0 : widget.fadingEdgeStartFraction,
+      gradientFractionOnEnd: showFading ? 0.0 : widget.fadingEdgeEndFraction,
       child: child as ScrollView,
     );
   }
