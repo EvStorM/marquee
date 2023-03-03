@@ -8,6 +8,11 @@ every round.
 
 This is a minimalistic example:
 
+### add
+
+add TextSpan to Marquee
+
+
 ```dart
 Marquee(
   text: 'There once was a boy who told this story about a boy: "',
